@@ -1,3 +1,5 @@
 
 Monday/.ipynb_checkpoints/PyTorch_Example-checkpoint.ipynb
 .DS_Store
+.vscode
+__pycache__
