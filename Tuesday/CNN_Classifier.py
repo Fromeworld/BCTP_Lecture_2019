@@ -19,27 +19,30 @@ def get_class(one_hot_vec):
         if one_hot_vec[i] == 1:
             return classes[i]
 
+# torch.backends.cudnn.enabled = False
 
 # read in array with information
-hnd = open("./GalaxyZoo/training_data_2.txt","r")
+# hnd = open("./GalaxyZoo/training_data_2.txt","r")
+# hnd = open("./GalaxyZoo/training_data.txt","r")
+hnd = open("./Tuesday/GalaxyZoo/training_data.txt","r")
 all_data = eval(hnd.read())
 random.shuffle(all_data)
 hnd.close()
 
 # look at a few images
-counter = 0
-for entry in all_data:
-    image = plt.imread(os.path.join('./GalaxyZoo/', entry[0] + '.jpg'))
-    plt.figure()
-    plt.title(get_class(entry[1:]))
-    plt.imshow(image)
-    plt.show()
-    plt.imshow(scipy.ndimage.rotate(image, 90))
-    plt.show()
+# counter = 0
+# for entry in all_data:
+#     image = plt.imread(os.path.join('./GalaxyZoo/', entry[0] + '.jpg'))
+#     plt.figure()
+#     plt.title(get_class(entry[1:]))
+#     plt.imshow(image)
+#     plt.show()
+#     plt.imshow(scipy.ndimage.rotate(image, 90))
+#     plt.show()
 
-    counter += 1
-    if counter == 3:
-        break
+#     counter += 1
+#     if counter == 3:
+#         break
 
 mean = 0.5
 std = 0.5
@@ -67,7 +70,8 @@ for i in range(len(all_data)):
     if i == max_num:
         break
     name, galaxy_class = all_data[i][0], all_data[i][1:]
-    image = plt.imread(os.path.join('./GalaxyZoo/', name + '.jpg'))
+    # image = plt.imread(os.path.join('./GalaxyZoo/', name + '.jpg'))
+    image = plt.imread(os.path.join('./Tuesday/GalaxyZoo/', name + '.jpg'))
     # perform over-/ undersampling to create a balanced train set
     images = [image]
     if galaxy_class[0] == 1 and random.random() > 0.5:
@@ -89,7 +93,8 @@ print("(# train, # test): (" + str(len(train_set)) + ", " + str(len(test_set)) +
 # look at distribution of three classes in train set
 distro = np.array([0 for _ in range(len(classes))])
 for e in train_set:
-    distro = np.add(distro, e[1].numpy())
+    # distro = np.add(distro, e[1].numpy())
+    distro = np.add(distro, e[1].cpu().numpy())
 
 for i in range(len(classes)):
     print("{:12s}: {:1.2f}".format(classes[i], distro[i]/float(len(train_set))))
@@ -118,6 +123,7 @@ class Classifyer_CNN(nn.Module):
         self.fc3 = nn.Linear(60, 3)
 
     def forward(self, x):
+        x=x.cuda()
         x = F.relu(self.conv1(x))
         x = self.pool1(x)
         x = F.relu(self.conv2(x))
@@ -138,7 +144,7 @@ net.to(device)
 
 trainloader = DataLoader(dataset=train_set, batch_size=1, shuffle=True)
 testloader = DataLoader(dataset=test_set, batch_size=1, shuffle=False)
-num_epochs = 10
+num_epochs = 50 #10
 for epoch in range(num_epochs):  # loop over the dataset multiple times
     running_loss = 0.0
     print("##################################################################################")
@@ -152,7 +158,7 @@ for epoch in range(num_epochs):  # loop over the dataset multiple times
         optimizer.zero_grad()
 
         # forward, backward, optimize
-        outputs = net(inputs)
+        outputs = net(inputs).cuda()
         loss = criterion(outputs, torch.max(labels, 1)[1])
         loss.backward()
         optimizer.step()
@@ -181,12 +187,49 @@ for epoch in range(num_epochs):  # loop over the dataset multiple times
         for i in range(len(num_correct)):
             print("{:12s}: {:1.4f}".format(classes[i], float(num_correct[i])/float(num_in_category[i])))
 
-        print("{:12s}: {:5d}/{:5d} = {:1.4f}".format("Total", len(train_set)-len(incorrect_classified), len(train_set), float(len(train_set)-len(incorrect_classified)) / float(len(train_set))))
+        # print("{:12s}: {:5d}/{:5d} = {:1.4f}".format("Total", len(train_set)-len(incorrect_classified), len(train_set), float(len(train_set)-len(incorrect_classified)) / float(len(train_set))))
+        print("{:12s}: {:5d}/{:5d} = {:1.4f}".format("Total", len(test_set)-len(incorrect_classified), len(test_set), float(len(test_set)-len(incorrect_classified)) / float(len(test_set))))
         random.shuffle(incorrect_classified)
-        for i in range(min(3, len(incorrect_classified))):
-            plt.figure()
-            plt.title("Label: " + incorrect_classified[i][1] + ", NN: " + incorrect_classified[i][2])
-            plt.imshow(untransform(incorrect_classified[i][0]).convert("RGB"))
-            plt.show()
+        # for i in range(min(3, len(incorrect_classified))):
+        #     plt.figure()
+        #     plt.title("Label: " + incorrect_classified[i][1] + ", NN: " + incorrect_classified[i][2])
+        #     plt.imshow(untransform(incorrect_classified[i][0].cpu()).convert("RGB"))
+        #     plt.show()
+
+    # with torch.no_grad():
+    #     num_incorrect = [0, 0, 0]
+    #     num_in_category = [0, 0, 0]
+    #     correct_classified = []
+    #     correct_num = 0
+    #     total_num =0
+    #     for _, data in enumerate(testloader, 0):
+    #         inputs, labels = data
+    #         labels = torch.max(labels, 1)[1]
+    #         outputs = net(inputs)
+    #         outputs = torch.max(outputs, 1)[1]
+    #         num_in_category[labels] += 1
+    #         total_num +=1
+    #         if labels != outputs:
+    #             num_incorrect[outputs] += 1
+    #         else:
+    #             correct_classified.append([inputs[0], classes[labels], classes[outputs]])
+    #             correct_num +=1
+
+    #     for i in range(len(num_incorrect)):
+    #         print("{:12s}: {:1.4f}".format(classes[i], float(num_incorrect[i])/float(num_in_category[i])))
+
+    #     # print("{:12s}: {:5d}/{:5d} = {:1.4f}".format("Total", len(train_set)-len(correct_classified), len(train_set), float(len(train_set)-len(correct_classified)) / float(len(train_set))))
+    #     print("{:12s}: {:5d}/{:5d} = {:1.4f}".format("Total", int(total_num)-len(correct_classified), int(total_num), (float(total_num)-len(correct_classified)) / float(total_num) ))
+    #     print(len(correct_classified))
+    #     print(len(train_set))
+    #     print(num_incorrect)
+    #     print(correct_num)
+    #     random.shuffle(correct_classified)
+    #     for i in range(min(3, len(correct_classified))):
+    #         plt.figure()
+    #         plt.title("Label: " + correct_classified[i][1] + ", NN: " + correct_classified[i][2])
+    #         plt.imshow(untransform(correct_classified[i][0].cpu()).convert("RGB"))
+    #         plt.show()
+       
 
 print('Finished Training')

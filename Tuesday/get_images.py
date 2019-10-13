@@ -38,7 +38,7 @@ with open('GalaxyZoo/GalaxyZoo1_DR_table2.csv') as csv_file:
     max_number = 100000
     for row in csv_reader:
         if entry % 100 == 0:
-            print entry
+            print (entry)
         if entry == 0:  # skip header
             entry += 1
             continue
