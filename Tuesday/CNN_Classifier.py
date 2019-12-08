@@ -11,6 +11,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
+
+# 
+from pathlib import Path
+
 # different type of galaxies
 classes = ['spiral', 'elliptical', 'uncertain']
 def get_class(one_hot_vec):
@@ -24,7 +28,10 @@ def get_class(one_hot_vec):
 # read in array with information
 # hnd = open("./GalaxyZoo/training_data_2.txt","r")
 # hnd = open("./GalaxyZoo/training_data.txt","r")
-hnd = open("./Tuesday/GalaxyZoo/training_data.txt","r")
+# hnd = open("./Tuesday/GalaxyZoo/training_data.txt","r")
+hnd_path = Path("./Tuesday/GalaxyZoo/training_data.txt")
+hnd = open(hnd_path)
+
 all_data = eval(hnd.read())
 random.shuffle(all_data)
 hnd.close()
